@@ -1,0 +1,65 @@
+	<!-- 리로드 messageSource 설정 --> ---------------->
+	<bean id="messageSource" class="com.ecs.quadmax.common.util.QuadMaxReloadableResourceBundleMessageSource">
+                                                          MessageSource의 구현체를 ResourceBundleMessageSource가 아닌 ReloadableResourceBundleMessageSource를 사용하면 
+                                                          어플리케이션 실행 중에 메시지 리소스 변경을 reload하게 하여 변경사항을 적용할 수 있다.
+		<property name="basenames">
+			<list>
+				<value>classpath:/message/message-common</value>------------------>message 폴더 안에 message-common_en_US.properties, message-common_ok_KR.properties 두 개의 파일이 있다면,
+                                                                            접속하는 세션의 로케일에 따라 자동으로 로딩한다.
+                                                                            
+			</list>
+		</property>
+		<property name="cacheSeconds"> ------------------------------------------>메시지 소스를 캐시하는 최대 시간(초)를 설정한다. 180초까지 캐싱하고 180초가 지나면 메시지 다시 읽기.
+			<value>180</value>
+		</property>
+		<property name="useCodeAsDefaultMessage">
+			<value>true</value>
+		</property>
+	</bean>
+
+	<!-- messageSource 설정 -->
+	<bean id="quadMaxMessageSource" class="com.ecs.quadmax.common.QuadMaxMessageSource">
+		<property name="reloadableResourceBundleMessageSource">
+			<ref bean="messageSource" />
+		</property>
+	</bean>
+  
+  실제 예시
+ 1.자바
+ throw new QuadMaxException(quadMaxMessageSource, "FF0004");
+ 
+ 2.jsp
+ 2.1) common.lang('MW0042');	
+ 2.2) var msg = common.lang("FW0004", row, fieldName); 
+      FW0004 = {0} \uD589\uC758 \uD544\uB4DC [{1}]
+               row                           fieldName
+ 2.3)common.js 설정
+   $.i18n.properties({ ------------------------------> i18n = jQuery 기반 JavaScript 국제화 라이브러리.
+    name: 'message-common',
+    path: '/message/',
+    mode: 'map',
+    language: common.getCookie('quadMaxlanguage') || 'ko_KR', --------------------------> loginSuccess.jsp (common.setCookie('quadMaxlanguage', (userVO.lang || 'ko_KR'));)
+    callback: function () { }
+  });
+  *i18n.jquery에 name + _ + language +.properties*
+  
+   var files = getFiles(settings.name);
+
+    for (var k = 0, m = files.length; k < m; k++) {
+        // 1. load base (eg, Messages.properties)
+        loadAndParseFile(settings.path + files[k] + '.properties', settings);
+        // 2. with language code (eg, Messages_pt.properties)
+        var shortCode = settings.language.substring(0, 2); -------------------------> ko
+        if (languages.length == 0 || $.inArray(shortCode, languages) != -1) {
+          loadAndParseFile(settings.path + files[k] + '_' + shortCode + '.properties', settings);
+        }
+        // 3. with language code and country code (eg, Messages_pt_BR.properties)
+        if (settings.language.length >= 5) {
+          var longCode = settings.language.substring(0, 5);--------------------------> ko_kr
+          if (languages.length == 0 || $.inArray(longCode, languages) != -1) {
+            loadAndParseFile(settings.path + files[k] + '_' + longCode + '.properties', settings);
+          }
+        }
+      }
+
+               
